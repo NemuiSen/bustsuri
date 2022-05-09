@@ -1,7 +1,7 @@
 # Busturi
 [![latest version](https://img.shields.io/crates/v/butsuri)](https://crates.io/crates/butsuri)
 
-~~A physics engine~~ An asset that provides 2d collision detertor and kinematics, build from scratch in [bevy](bevyengine.org)
+~~A physics engine~~ An asset that provides 2d collision detector and kinematics, build from scratch in [bevy](bevyengine.org)
 
 ### How to use
 Add PhysicsPlugin to the program and optionally also DebugPlugin to see the collisions of the entities.
