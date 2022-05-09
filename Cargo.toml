@@ -1,0 +1,20 @@
+[package]
+name = "butsuri"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["NemuiSen <nekonya.sen@gmail.com>"]
+license  = "MIT"
+repository = "https://github.com/NemuiSen/bustsuri"
+description = " Currently only an asset that provides 2d collision detertor and kinematics, build from scratch in bevy"
+keywords = ["bevy", "asset", "game", "gamedev"]
+categories = ["game-development"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.7.0"
+bevy_prototype_lyon = "0.5.0"
+
+[dev-dependencies]
+rand = "0.8.5"
