@@ -36,8 +36,7 @@ impl Plugin for PhysicsPlugin {
 		};
 
 		app
-			.add_event::<collision::CollisionEvent>()
-			.add_system_to_stage(CoreStage::PreUpdate, collision::collision_event)
+			.add_system_to_stage(CoreStage::PreUpdate, collision::collision_info)
 			.add_system_set_to_stage(
 				CoreStage::PostUpdate,
 				post_update
@@ -93,16 +92,16 @@ fn spawn_debug_shape(
 ) {
 	for (parent, collider_shape) in query.iter() {
 		let mut builder = GeometryBuilder::new();
-		match *collider_shape {
-			ColliderShape::AABB(w, h) => {
+		match collider_shape {
+			ColliderShape::AABB(size) => {
 				builder = builder.add(&shapes::Rectangle {
-					extents: vec2(w*2.0, h*2.0),
+					extents: vec2(size.x*2.0, size.y*2.0),
 					..default()
 				});
 			},
 			ColliderShape::Circle(r) => {
 				builder = builder.add(&shapes::Circle {
-					radius: r,
+					radius: *r,
 					..default()
 				});
 			},
@@ -126,7 +125,7 @@ fn collider_debug_transform_sync(
 	for (child, mut child_transform, ColliderDebugParent(parent)) in child_query.iter_mut() {
 		if let Ok((parent_transform, collider_shape)) = parent_query.get(*parent) {
 			match collider_shape {
-				ColliderShape::AABB(_, _) => child_transform.translation = parent_transform.translation,
+				ColliderShape::AABB(_) => child_transform.translation = parent_transform.translation,
 				_ => *child_transform = *parent_transform
 			}
 			

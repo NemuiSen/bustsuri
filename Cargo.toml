@@ -6,7 +6,7 @@ edition = "2021"
 authors = ["NemuiSen <nekonya.sen@gmail.com>"]
 license  = "MIT"
 repository = "https://github.com/NemuiSen/bustsuri"
-description = " Currently only an asset that provides 2d collision detertor and kinematics, build from scratch in bevy"
+description = "Currently only an asset that provides 2d collision detector and kinematics, build from scratch in bevy"
 keywords = ["bevy", "asset", "game", "gamedev"]
 categories = ["game-development"]
 

@@ -1,19 +1,13 @@
 use std::f32::consts::PI;
-
-use bevy::{
-	prelude::*,
-	math::*
-};
+use bevy::prelude::*;
 use butsuri::prelude::*;
 
 fn main() {
 	App::new()
 		.add_plugins(DefaultPlugins)
 		.add_plugin(PhysicsPlugin::default())
-		.add_plugin(DebugPlugin)
 		.add_startup_system(setup)
 		.add_system(move_shape)
-		.add_system(check_collision)
 	.run();
 }
 
@@ -28,41 +22,14 @@ fn setup(mut commands: Commands) {
 		},
 		..Default::default()
 	})
-	.insert_bundle(Kinematic::default())
-	.insert_bundle(ColliderBundle::new(ColliderShape::AABB(Vec2::splat(25.0))))
+	.insert_bundle(Kinematic {
+		drag: Drag {
+			linear: 0.01,
+			angular: 0.01,
+		},
+		..default()
+	})
 	.insert(Player);
-
-	commands.spawn_bundle(SpriteBundle {
-		sprite: Sprite {
-			custom_size: Some(Vec2::splat(50.)),
-			..Default::default()
-		},
-		transform: Transform::from_translation(vec3( 200., 0., 0.)),
-		..Default::default()
-	})
-	.insert_bundle(ColliderBundle::new(ColliderShape::AABB(Vec2::splat(50.0))));
-
-	commands.spawn_bundle(SpriteBundle {
-		sprite: Sprite {
-			custom_size: Some(Vec2::splat(50.)),
-			..Default::default()
-		},
-		transform: Transform::from_translation(vec3(-200., 0., 0.)),
-		..Default::default()
-	})
-	.insert_bundle(ColliderBundle::new(ColliderShape::Circle(50.0)));
-}
-
-fn check_collision(
-	mut query: Query<(&mut Sprite, &CollisionInfo)>,
-) {
-	for (mut sprite, info) in query.iter_mut() {
-		if info.is_colliding {
-			sprite.color = Color::BLUE;
-		} else {
-			sprite.color = Color::RED;
-		}
-	}
 }
 
 #[derive(Component)]
