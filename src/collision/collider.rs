@@ -1,17 +1,25 @@
 use bevy::prelude::*;
-use super::shape::AABB;
 
-pub(crate) trait SimpleCollider {
-	fn get_position(&self) -> Vec2;
-	fn closest_point(&self, point: Vec2) -> Vec2;
-	fn into_aabb(&self, point: Vec2) -> AABB;
-	fn collide(&self, other: Box<dyn SimpleCollider>) -> bool {
-		let AABB { min, max, .. } = self.into_aabb(other.get_position());
-		let point = other.closest_point(self.get_position());
-		let adif = min - point;
-		let bdif = point - max;
-		if adif.x > 0. || adif.y > 0. { return false }
-		if bdif.x > 0. || bdif.y > 0. { return false }
+pub(crate) trait Collider {
+	fn get_normals(&self) -> Vec<Vec2> { vec![] } 
+	fn get_positions(&self) -> Vec<Vec2>;
+	fn axes_from_position(&self, other_positions: &Vec<Vec2>) -> Vec<Vec2>;
+	fn range_along_axis(&self, axis_proj: Vec2) -> (f32, f32);
+	fn collide(&self, other: Box<dyn Collider>) -> bool {
+		let position_axes = self.axes_from_position(&other.get_positions());
+		let self_normals = self.get_normals();
+		let other_normals = other.get_normals();
+
+		let axes = [position_axes, self_normals, other_normals].concat();
+
+		for axis in axes.into_iter() {
+			let (amin, amax) = self .range_along_axis(axis);
+			let (bmin, bmax) = other.range_along_axis(axis);
+
+			if !(amax >= bmin && bmax >= amin) {
+				return false;
+			}
+		}
 		true
 	}
 }

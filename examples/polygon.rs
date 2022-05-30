@@ -29,7 +29,7 @@ fn setup(mut commands: Commands) {
 		..Default::default()
 	})
 	.insert_bundle(RigidBodyBundle {
-		collider: ColliderBundle::new(ColliderShape::AABB(Vec2::splat(25.0))),
+		collider: ColliderBundle::new(ColliderShape::Square(25.0, 25.0)),
 		..default()
 	})
 	.remove_bundle::<ForcesBundle>()
@@ -40,10 +40,20 @@ fn setup(mut commands: Commands) {
 			custom_size: Some(Vec2::splat(50.)),
 			..Default::default()
 		},
+		transform: Transform::from_translation(vec3( 0., 100., 0.)),
+		..Default::default()
+	})
+	.insert_bundle(ColliderBundle::new(ColliderShape::Circle(50.)));
+
+	commands.spawn_bundle(SpriteBundle {
+		sprite: Sprite {
+			custom_size: Some(Vec2::splat(50.)),
+			..Default::default()
+		},
 		transform: Transform::from_translation(vec3( 200., 0., 0.)),
 		..Default::default()
 	})
-	.insert_bundle(ColliderBundle::new(ColliderShape::AABB(Vec2::splat(50.0))));
+	.insert_bundle(ColliderBundle::new(ColliderShape::Square(50.0, 50.0)));
 
 	commands.spawn_bundle(SpriteBundle {
 		sprite: Sprite {
@@ -53,7 +63,7 @@ fn setup(mut commands: Commands) {
 		transform: Transform::from_translation(vec3(-200., 0., 0.)),
 		..Default::default()
 	})
-	.insert_bundle(ColliderBundle::new(ColliderShape::Circle(50.0)));
+	.insert_bundle(ColliderBundle::new(ColliderShape::Polygon(vec![vec2(-50.0, -50.0), vec2(0.0, 50.0), vec2(50.0, -50.0)])));
 }
 
 fn check_collision(
@@ -61,9 +71,9 @@ fn check_collision(
 ) {
 	for (mut sprite, info) in query.iter_mut() {
 		if info.is_colliding {
-			sprite.color = Color::BLUE;
-		} else {
 			sprite.color = Color::RED;
+		} else {
+			sprite.color = Color::BLUE;
 		}
 	}
 }
@@ -72,7 +82,7 @@ fn check_collision(
 struct Player;
 fn move_shape(
 	input: Res<Input<KeyCode>>,
-	mut query: Query<(&mut Acceleration, &mut IsStatic), With<Player>>
+	mut query: Query<(&mut Velocity, &mut IsStatic), With<Player>>
 ) {
 	let (mut velocity, mut is_static) = query.single_mut();
 	if input.just_pressed(KeyCode::P) { **is_static = !**is_static; }

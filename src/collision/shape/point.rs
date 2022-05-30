@@ -6,7 +6,7 @@ pub(crate) struct Point {
 	pub position: Vec2,
 }
 
-impl SimpleCollider for Point {
+impl Collider for Point {
 	fn get_position(&self) -> Vec2 {
 	    self.position
 	}
@@ -16,20 +16,22 @@ impl SimpleCollider for Point {
 	}
 
 	fn into_aabb(&self, _: Vec2) -> AABB {
-		AABB {
+	    AABB {
 			position: self.position,
 			min: self.position,
-			max: self.position,
+			max: self.position
 		}
 	}
 
 	fn collide(&self, other: Box<dyn SimpleCollider>) -> bool {
-	    let AABB { min, max, .. } = other.into_aabb(other.get_position());
-		let adif = min - self.position;
-		let bdif = self.position - max;
-		if adif.x > 0. || adif.y > 0. { return false }
-		if bdif.x > 0. || bdif.y > 0. { return false }
-		true
+		let other_position = other.closest_point(self.position);
+
+		aprox_vec2_eq(self.position, other_position)
 	}
+}
+
+fn aprox_vec2_eq(p1: Vec2, p2: Vec2) -> bool {
+	let d = (p1-p2).abs();
+	d.x < f32::EPSILON && d.y < f32::EPSILON
 }
 

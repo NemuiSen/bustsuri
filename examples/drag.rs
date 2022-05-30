@@ -22,10 +22,13 @@ fn setup(mut commands: Commands) {
 		},
 		..Default::default()
 	})
-	.insert_bundle(Kinematic {
-		drag: Drag {
-			linear: 0.01,
-			angular: 0.01,
+	.insert_bundle(KinematicBundle {
+		forces: ForcesBundle {
+			drag: Drag {
+				linear: 0.01,
+				angular: 0.01,
+			},
+			..default()
 		},
 		..default()
 	})

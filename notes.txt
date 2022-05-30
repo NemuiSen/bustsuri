@@ -1,0 +1,9 @@
+https://spicyyoghurt.com/tutorials/html5-javascript-game-development/collision-detection-physics
+https://gamedev.stackexchange.com/questions/113178/when-should-i-use-velocity-versus-addforce-when-dealing-with-player-objects
+https://saveriomiroddi.github.io/Rust-lulz-implementing_floating_point_approximate_equality_via_traits/
+https://natureofcode.com/
+https://www.jeffreythompson.org/collision-detection/
+https://betterexplained.com/articles/vector-calculus-understanding-the-dot-product/
+https://stackoverflow.com/questions/3120357/get-closest-point-to-a-line
+https://www.youtube.com/watch?v=7Ik2vowGcU0
+https://wickedengine.net/2020/04/26/capsule-collision-detection/

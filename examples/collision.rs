@@ -1,3 +1,5 @@
+use std::f32::consts::{TAU, PI};
+
 use bevy::{
 	prelude::*,
 	math::{vec3, vec2}
@@ -37,26 +39,27 @@ fn setup(
 				transform: Transform::from_translation(random_position()),
 				..Default::default()
 			})
-		.insert_bundle(random_collier_shape())
-		.insert_bundle(Dynamic {
-			velocity: Velocity {
-				linear: random_velocity(),
-				angular: 0.0,
-			},
+		.insert_bundle(ColliderBundle::new(random_collier_shape()))
+		.insert_bundle(DynamicBundle {
+			velocity: random_velocity(),
 			..Default::default()
 		});
 	}
 }
 
-fn input(input: Res<Input<KeyCode>>, mut query: Query<(&mut Transform, &mut Velocity)>) {
-	if input.just_pressed(KeyCode::P) {
-		for (mut transform, _) in query.iter_mut() {
+fn input(
+	input: Res<Input<KeyCode>>,
+	mut query: Query<(&mut Transform, &mut Velocity, &mut ColliderShape)>
+) {
+	for (mut transform, mut velocity, mut shape) in query.iter_mut() {
+		if input.just_pressed(KeyCode::P) {
 			transform.translation = random_position();
 		}
-	}
-	if input.just_pressed(KeyCode::V) {
-		for (_, mut velocity) in query.iter_mut() {
-			velocity.linear = random_velocity();
+		if input.just_pressed(KeyCode::V) {
+			*velocity = random_velocity();
+		}
+		if input.just_pressed(KeyCode::S) {
+			*shape = random_collier_shape();
 		}
 	}
 }
@@ -69,27 +72,43 @@ fn random_position() -> Vec3 {
 	)
 }
 
-fn random_velocity() -> Vec2 {
-	vec2(
-		thread_rng().gen_range(-1.0..=1.0),
-		thread_rng().gen_range(-1.0..=1.0),
-	).normalize() * thread_rng().gen_range(25. ..= 50.)
+fn random_velocity() -> Velocity {
+	Velocity {
+		linear: vec2(
+			thread_rng().gen_range(-1. ..= 1.),
+			thread_rng().gen_range(-1. ..= 1.)
+		).normalize_or_zero() * thread_rng().gen_range(25. ..= 50.),
+		angular: thread_rng().gen_range(rad(-22.5)..=rad(22.5)),
+	}
 }
 
-fn random_collier_shape() -> ColliderBundle {
-	let mut collider = ColliderBundle::default();
-	match thread_rng().gen::<bool>() {
-		true  => collider.shape = {
+fn rad(deg: f32) -> f32 { deg*PI/180. }
+
+fn random_collier_shape() -> ColliderShape {
+	match thread_rng().gen_range(0u8..=3) {
+		0 => {
 			let w = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
 			let h = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
-			ColliderShape::AABB(Vec2::new(w, h))
+			ColliderShape::Square(w, h)
 		},
-		false => collider.shape = {
+		1 => {
 			let r = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
 			ColliderShape::Circle(r)
 		},
-	} 
-	collider
+		_ => {
+			let count = thread_rng().gen_range(3u8..=10);
+			let offset = TAU/(count as f32);
+			let vertices = (0..count).map(|i| {
+				let radius = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
+				let angle = i as f32 * offset;
+				vec2(
+					angle.cos() * radius,
+					angle.sin() * radius,
+				)
+			}).collect();
+			ColliderShape::Polygon(vertices)
+		}
+	}
 }
 
 fn out_of_bounds(
@@ -102,10 +121,10 @@ fn out_of_bounds(
 	let hlimit = width /2.0;
 	let vlimit = height/2.0;
 	for mut transform in query.iter_mut() {
-		if transform.translation.x < -hlimit-1.0 { transform.translation.x =  hlimit; }
-		if transform.translation.x >  hlimit+1.0 { transform.translation.x = -hlimit; }
-		if transform.translation.y < -vlimit-1.0 { transform.translation.y =  vlimit; }
-		if transform.translation.y >  vlimit+1.0 { transform.translation.y = -vlimit; }
+		if transform.translation.x < -hlimit { transform.translation.x =  hlimit; }
+		if transform.translation.x >  hlimit { transform.translation.x = -hlimit; }
+		if transform.translation.y < -vlimit { transform.translation.y =  vlimit; }
+		if transform.translation.y >  vlimit { transform.translation.y = -vlimit; }
 	}
 }
 
@@ -114,9 +133,9 @@ fn collision_reaction (
 ) {
 	for (mut sprite, info) in query.iter_mut() {
 		if info.is_colliding {
-			sprite.color = Color::BLUE;
-		} else {
 			sprite.color = Color::RED;
+		} else {
+			sprite.color = Color::BLUE;
 		}
 	}
 }

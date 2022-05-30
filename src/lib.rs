@@ -35,12 +35,13 @@ impl Plugin for PhysicsPlugin {
 			GravityEffect::Acceleration => post_update.with_system(gravity_acceleration.before(kinematic::update_transform))
 		};
 
+		let pre_update = SystemSet::new()
+			.with_system(collision::collision_info)
+			.with_system(kinematic::is_sleep);
+
 		app
-			.add_system_to_stage(CoreStage::PreUpdate, collision::collision_info)
-			.add_system_set_to_stage(
-				CoreStage::PostUpdate,
-				post_update
-			);
+			.add_system_set_to_stage(CoreStage::PreUpdate, pre_update)
+			.add_system_set_to_stage(CoreStage::PostUpdate,	post_update);
 	}
 }
 
@@ -79,12 +80,14 @@ impl Plugin for DebugPlugin {
 	fn build(&self, app: &mut App) {
 	    app.add_plugin(ShapePlugin)
 			.add_system(spawn_debug_shape)
+			.add_system(update_debug_shape)
 			.add_system(collider_debug_transform_sync);
 	}
 }
 
 #[derive(Component)] struct ColliderDebugParent(Entity);
 #[derive(Component)] struct ColliderDebugChild(Entity);
+
 
 fn spawn_debug_shape(
 	mut commands: Commands,
@@ -93,19 +96,46 @@ fn spawn_debug_shape(
 	for (parent, collider_shape) in query.iter() {
 		let mut builder = GeometryBuilder::new();
 		match collider_shape {
-			ColliderShape::AABB(size) => {
-				builder = builder.add(&shapes::Rectangle {
-					extents: vec2(size.x*2.0, size.y*2.0),
-					..default()
-				});
+			ColliderShape::Polygon(vertices) => {
+				let mut vertices = vertices.clone();
+				let mut path_builder = PathBuilder::new();
+				let start = vertices.pop().unwrap();
+				path_builder.move_to(start);
+				vertices.push(start);
+				for vertex in vertices {
+					path_builder.line_to(vertex);
+					path_builder.move_to(vertex);
+				}
+
+				builder = builder.add(&path_builder.build());
 			},
-			ColliderShape::Circle(r) => {
+			&ColliderShape::Square(w, h) => {
+				let mut path_builder = PathBuilder::new();
+				//-1/+1
+				path_builder.line_to(vec2(-w,  h));
+				path_builder.move_to(vec2(-w,  h));
+				//+1/+1
+				path_builder.line_to(vec2( w,  h));
+				path_builder.move_to(vec2( w,  h));
+				//+1/-1
+				path_builder.line_to(vec2( w, -h));
+				path_builder.move_to(vec2( w, -h));
+				//-1/-1
+				path_builder.line_to(vec2(-w, -h));
+				path_builder.move_to(vec2(-w, -h));
+				//-1/+1
+				path_builder.line_to(vec2(-w,  h));
+				path_builder.move_to(vec2(-w,  h));
+
+				builder = builder.add(&path_builder.build());
+			},
+			&ColliderShape::Circle(radius) => {
 				builder = builder.add(&shapes::Circle {
-					radius: *r,
+					radius,
 					..default()
-				});
-			},
-			_ => unreachable!()
+				})
+			}
+			_ => unimplemented!()
 		}
 
 		let child = commands.spawn_bundle(builder.build(
@@ -117,6 +147,58 @@ fn spawn_debug_shape(
 	}
 }
 
+fn update_debug_shape(
+	mut child_query: Query<&mut Path, With<ColliderDebugParent>>,
+	parent_query: Query<(&ColliderShape, &ColliderDebugChild) , (Without<ColliderDebugParent>, Changed<ColliderShape>)>,
+) {
+	for (shape, ColliderDebugChild(child)) in parent_query.iter() {
+		if let Ok(mut path) = child_query.get_mut(*child) {
+			*path = match shape {
+				ColliderShape::Polygon(vertices) => {
+					let mut vertices = vertices.clone();
+					let mut path_builder = PathBuilder::new();
+					let start = vertices.pop().unwrap();
+					path_builder.move_to(start);
+					vertices.push(start);
+					for vertex in vertices {
+						path_builder.line_to(vertex);
+						path_builder.move_to(vertex);
+					}
+
+					path_builder.build()
+				},
+				&ColliderShape::Square(w, h) => {
+					let mut path_builder = PathBuilder::new();
+					//-1/+1
+					path_builder.line_to(vec2(-w,  h));
+					path_builder.move_to(vec2(-w,  h));
+					//+1/+1
+					path_builder.line_to(vec2( w,  h));
+					path_builder.move_to(vec2( w,  h));
+					//+1/-1
+					path_builder.line_to(vec2( w, -h));
+					path_builder.move_to(vec2( w, -h));
+					//-1/-1
+					path_builder.line_to(vec2(-w, -h));
+					path_builder.move_to(vec2(-w, -h));
+					//-1/+1
+					path_builder.line_to(vec2(-w,  h));
+					path_builder.move_to(vec2(-w,  h));
+
+					path_builder.build()
+				},
+				&ColliderShape::Circle(radius) => {
+					ShapePath::build_as(&shapes::Circle {
+						radius,
+						..default()
+					})
+				}
+				_ => unimplemented!()
+			}
+		}
+	}
+}
+
 fn collider_debug_transform_sync(
 	mut commands: Commands,
 	mut child_query: Query<(Entity, &mut Transform, &ColliderDebugParent)>,
@@ -125,7 +207,6 @@ fn collider_debug_transform_sync(
 	for (child, mut child_transform, ColliderDebugParent(parent)) in child_query.iter_mut() {
 		if let Ok((parent_transform, collider_shape)) = parent_query.get(*parent) {
 			match collider_shape {
-				ColliderShape::AABB(_) => child_transform.translation = parent_transform.translation,
 				_ => *child_transform = *parent_transform
 			}
 			

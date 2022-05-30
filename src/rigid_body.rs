@@ -1,17 +1,16 @@
 use bevy::prelude::*;
 
-use crate::prelude::Kinematic;
+use crate::prelude::KinematicBundle;
+use crate::prelude::ColliderBundle;
 
-#[derive(Bundle)]
+#[derive(Default, Bundle)]
 pub struct RigidBodyBundle {
-	body_type: BodyType,
-	#[bundle]
-	kinematic: Kinematic,
+	#[bundle] pub kinematic: KinematicBundle,
+	#[bundle] pub collider: ColliderBundle,
+	pub is_static: IsStatic,
+	pub is_sleep: IsSleep,
 }
 
-#[derive(Component)]
-pub enum BodyType {
-	Dynamic,
-	Static,
-}
+#[derive(Default, Component, Deref, DerefMut)] pub struct IsStatic(bool);
+#[derive(Default, Component, Deref, DerefMut)] pub struct IsSleep(bool);
 

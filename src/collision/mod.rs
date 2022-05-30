@@ -1,9 +1,10 @@
 mod collider;
 pub mod shape {
 	use super::collider::*;
-	mod   aabb; pub(super) use   aabb::AABB  ;
+	//mod aabb; pub(super) use aabb::AABB;
 	mod circle; pub(super) use circle::Circle;
-	mod  point; pub(super) use  point::Point ;
+	//mod point; pub(super) use point::Point;
+	mod polygon; pub(super) use polygon::Polygon;
 }
 
 use bevy::{prelude::*, utils::HashSet};
@@ -11,7 +12,7 @@ use bevy::{prelude::*, utils::HashSet};
 #[derive(Default, Bundle)]
 pub struct ColliderBundle {
 	pub shape: ColliderShape,
-	     info: CollisionInfo,
+	info: CollisionInfo,
 }
 
 impl ColliderBundle {
@@ -34,22 +35,18 @@ pub enum ColliderShape {
 	#[default]
 	Point,
 	AABB(Vec2),
+	Square(f32, f32),
 	Circle(f32),
+	Polygon(Vec<Vec2>),
 }
 
 impl ColliderShape {
-	fn simple_collider(&self, position: Vec2) -> Box<dyn collider::SimpleCollider> {
+	fn as_collider(&self, trans: GlobalTransform) -> Box<dyn collider::Collider> {
 		match self {
-			&ColliderShape::Point => Box::new(shape::Point { position }),
-			&ColliderShape::AABB(size) => Box::new(shape::AABB {
-				position,
-				min: position-size,
-				max: position+size,
-			}),
-			&ColliderShape::Circle(radius)=> Box::new(shape::Circle {
-				position,
-				radius,
-			}),
+			&Self::Circle(radius) => Box::new(shape::Circle { radius, position: trans.translation.truncate() }),
+			&Self::Square(w, h) => Box::new(shape::Polygon::square(w, h, trans)),
+			Self::Polygon(v) => Box::new(shape::Polygon::from_vertices(v.clone(), trans)),
+			_ => unimplemented!()
 		}
 	}
 }
@@ -62,8 +59,8 @@ pub(crate) fn collision_info(
 		(aid, atrans, ashape, mut ainfo),
 		(bid, btrans, bshape, mut binfo)
 	]) = combinations.fetch_next() {
-		let acoll = ashape.simple_collider(atrans.translation.truncate());
-		let bcoll = bshape.simple_collider(btrans.translation.truncate());
+		let acoll = ashape.as_collider(*atrans);
+		let bcoll = bshape.as_collider(*btrans);
 		if acoll.collide(bcoll) {
 			if !ainfo.is_colliding { ainfo.is_colliding = true; }
 			if !binfo.is_colliding { binfo.is_colliding = true; }

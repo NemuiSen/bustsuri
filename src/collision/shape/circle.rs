@@ -1,31 +1,27 @@
 use bevy::prelude::*;
-use super::SimpleCollider;
-use super::AABB;
+use super::Collider;
 
 pub(crate) struct Circle {
 	pub position: Vec2,
 	pub radius: f32,
 }
 
-impl SimpleCollider for Circle {
-	fn get_position(&self) -> Vec2 {
-	    self.position
+impl Collider for Circle {
+	fn get_positions(&self) -> Vec<Vec2> {
+		vec![self.position]
 	}
 
-	fn closest_point(&self, point: Vec2) -> Vec2 {
-		let Circle { radius, position } = *self;
-		let dif = point - position;
-		let mag = dif.length();
-		position+radius.min(mag)*dif/mag
+	fn axes_from_position(&self, other_positions: &Vec<Vec2>) -> Vec<Vec2> {
+		other_positions.iter()
+			.map(|&p| (p-self.position)
+			.normalize_or_zero())
+			.collect()
 	}
 
-	fn into_aabb(&self, point: Vec2) -> AABB {
-		let size = (self.closest_point(point) - self.position).abs();
-		AABB {
-			position: self.position,
-			min: self.position-size,
-			max: self.position+size,
-		}
+	fn range_along_axis(&self, axis_proj: Vec2) -> (f32, f32) {
+		let vmin = self.position - axis_proj*self.radius;
+		let vmax = self.position + axis_proj*self.radius;
+		(vmin.dot(axis_proj), vmax.dot(axis_proj))
 	}
 }
 
