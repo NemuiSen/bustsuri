@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
 		},
 		..Default::default()
 	})
-	.insert_bundle(Kinematic::default());
+	.insert_bundle(KinematicBundle::default());
 }
 
 fn input(

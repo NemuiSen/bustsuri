@@ -4,7 +4,7 @@ use bevy::{
 	prelude::*,
 	math::*
 };
-use butsuri::{prelude::*, rigid_body::{RigidBodyBundle, IsStatic}};
+use butsuri::prelude::*;
 
 fn main() {
 	App::new()
@@ -29,7 +29,7 @@ fn setup(mut commands: Commands) {
 		..Default::default()
 	})
 	.insert_bundle(RigidBodyBundle {
-		collider: ColliderBundle::new(ColliderShape::AABB(Vec2::splat(25.0))),
+		collider: ColliderBundle::new(ColliderShape::Square(25.0, 25.0)),
 		..default()
 	})
 	.remove_bundle::<ForcesBundle>()
@@ -40,10 +40,10 @@ fn setup(mut commands: Commands) {
 			custom_size: Some(Vec2::splat(50.)),
 			..Default::default()
 		},
-		transform: Transform::from_translation(vec3( 200., 0., 0.)),
+		transform: Transform::from_translation(vec3( 200., 0., 0.)).with_rotation(Quat::from_rotation_z(PI/4.0)),
 		..Default::default()
 	})
-	.insert_bundle(ColliderBundle::new(ColliderShape::AABB(Vec2::splat(50.0))));
+	.insert_bundle(ColliderBundle::new(ColliderShape::Square(50.0, 50.0)));
 
 	commands.spawn_bundle(SpriteBundle {
 		sprite: Sprite {
@@ -72,10 +72,15 @@ fn check_collision(
 struct Player;
 fn move_shape(
 	input: Res<Input<KeyCode>>,
-	mut query: Query<(&mut Acceleration, &mut IsStatic), With<Player>>
+	mut query: Query<(&mut Velocity, &mut Body), With<Player>>
 ) {
 	let (mut velocity, mut is_static) = query.single_mut();
-	if input.just_pressed(KeyCode::P) { **is_static = !**is_static; }
+	if input.just_pressed(KeyCode::P) {
+		*is_static = match *is_static {
+			Body::Static  => Body::Dynamic,
+			Body::Dynamic => Body::Static,
+		};
+	}
 	let mut delta = Vec2::ZERO;
 	if input.pressed(KeyCode::W) { delta.y += 1. }
 	if input.pressed(KeyCode::A) { delta.x -= 1. }

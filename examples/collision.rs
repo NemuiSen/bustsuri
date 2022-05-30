@@ -85,7 +85,7 @@ fn random_velocity() -> Velocity {
 fn rad(deg: f32) -> f32 { deg*PI/180. }
 
 fn random_collier_shape() -> ColliderShape {
-	match thread_rng().gen_range(0u8..=3) {
+	match thread_rng().gen_range(0u8..=10) {
 		0 => {
 			let w = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
 			let h = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
@@ -96,10 +96,10 @@ fn random_collier_shape() -> ColliderShape {
 			ColliderShape::Circle(r)
 		},
 		_ => {
-			let count = thread_rng().gen_range(3u8..=10);
+			let count = thread_rng().gen_range(3u8..=20);
 			let offset = TAU/(count as f32);
 			let vertices = (0..count).map(|i| {
-				let radius = thread_rng().gen_range(MIN_SHAPE_SIZE..=MAX_SHAPE_SIZE);
+				let radius = thread_rng().gen_range(MIN_SHAPE_SIZE/2.0..=MAX_SHAPE_SIZE*2.0);
 				let angle = i as f32 * offset;
 				vec2(
 					angle.cos() * radius,

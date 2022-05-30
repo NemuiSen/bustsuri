@@ -5,6 +5,7 @@ pub mod rigid_body;
 pub mod prelude {
 	pub use crate::kinematic::*;
 	pub use crate::collision::*;
+	pub use crate::rigid_body::*;
 	pub use crate::PhysicsPlugin;
 	pub use crate::GravityEffect;
 	pub use crate::DebugPlugin;
@@ -37,7 +38,7 @@ impl Plugin for PhysicsPlugin {
 
 		let pre_update = SystemSet::new()
 			.with_system(collision::collision_info)
-			.with_system(kinematic::is_sleep);
+			.with_system(rigid_body::is_sleep);
 
 		app
 			.add_system_set_to_stage(CoreStage::PreUpdate, pre_update)
@@ -79,9 +80,13 @@ pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
 	fn build(&self, app: &mut App) {
 	    app.add_plugin(ShapePlugin)
-			.add_system(spawn_debug_shape)
-			.add_system(update_debug_shape)
-			.add_system(collider_debug_transform_sync);
+			.add_startup_system_set_to_stage(
+				CoreStage::PreUpdate,
+				SystemSet::new()
+					.with_system(spawn_debug_shape)
+					.with_system(update_debug_shape)
+					.with_system(collider_debug_transform_sync)
+			);
 	}
 }
 

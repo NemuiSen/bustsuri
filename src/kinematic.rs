@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::rigid_body::{IsSleep, IsStatic};
+use crate::prelude::*;
 
 // v=d*t
 /// Required components for work: [`Transform`]
@@ -90,7 +90,7 @@ pub(crate) fn update_transform (
 		// Forces
 		Option<(&mut Force, &Resistance, &Drag)>,
 		// RigidBody
-		Option<&IsStatic>,
+		Option<&Body>,
 		Option<&IsSleep>,
 	)>
 ) {
@@ -99,11 +99,12 @@ pub(crate) fn update_transform (
 		mut velocity,
 		mut acceleration,
 		forces,
-		is_static,
+		body,
 		is_sleep,
 	) in query.iter_mut() {
-		// Stop when is static
-		if let Some(is_static) = is_static { if **is_static { return; } }
+		if let Some(body) = body { if *body == Body::Static { return; } }
+		if let Some(is_sleep) = is_sleep { if **is_sleep { return; } }
+
 		let delta = time.delta_seconds();
 		if let Some((mut force, resistance, drag)) = forces {
 			// Drag -> Force
@@ -130,25 +131,5 @@ pub(crate) fn update_transform (
 		transform.translation += velocity.linear.extend(0.0) * delta;
 		transform.rotate(Quat::from_rotation_z(velocity.angular * delta));
 	}
-}
-
-pub(crate) fn is_sleep(
-	mut query: Query<(&Velocity, &Acceleration, &Force, &mut IsSleep)>
-) {
-	for (velocity, acceleration, force, mut is_sleep) in query.iter_mut() {
-		let sleep =
-			tend_zero_vec2(    velocity.linear) || tend_zero_f32(    velocity.angular) ||
-			tend_zero_vec2(acceleration.linear) || tend_zero_f32(acceleration.angular) ||
-			tend_zero_vec2(       force.linear) || tend_zero_f32(       force.angular);
-		if **is_sleep != sleep { **is_sleep = sleep; }
-	}
-}
-
-fn tend_zero_f32(n: f32) -> bool {
-	n.abs() < f32::EPSILON 
-}
-
-fn tend_zero_vec2(v: Vec2) -> bool {
-	v.x.abs() < f32::EPSILON && v.y.abs() < f32::EPSILON
 }
 
